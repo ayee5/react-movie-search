@@ -16,10 +16,19 @@ class App extends Component {
 
   changetext(e) {
     this.setState({
-      searchText: e.target.value
+      searchText: e.target.value,
+      currentPage: 1
     });
 
-    this.fetchdata( e.target.value, this.state.currentPage);
+    this.fetchdata(e.target.value, this.state.currentPage);
+  }
+
+  clickPagintation(page) {
+    if(page < 1 || page > this.state.totalPages) return;
+    this.setState({
+      currentPage: page
+    });
+    this.fetchdata(this.state.searchText, page);
   }
 
   fetchdata(movie, page) {
@@ -36,7 +45,6 @@ class App extends Component {
       .then(res => res.json())
       .then(
         (resultObj) => {
-          console.log(resultObj);
           this.setState({
             movieList: resultObj.results,
             totalPages: resultObj.total_pages,
@@ -46,6 +54,29 @@ class App extends Component {
       )
     }
 
+  renderPagination() {
+    let paginatedLinks = []
+    if(this.state.totalPages == 0) return;
+    let currentPage = this.state.currentPage;
+    let linksPerPage = 8;
+    let indexGroup = parseInt((currentPage - 1) / linksPerPage);
+    let lastPage = (indexGroup + 1) * linksPerPage;
+    let firstPage = lastPage - linksPerPage + 1;
+
+    paginatedLinks.push(<a onClick={() => this.clickPagintation(firstPage-1)}>&laquo;</a>);
+    for(let i=firstPage; i<=lastPage; i++) {
+      if(lastPage > this.state.totalPages) break;
+      if(i == currentPage) {
+          paginatedLinks.push(<a className="active">{i}</a>);
+      }
+      else {
+          paginatedLinks.push(<a onClick={() => this.clickPagintation(i)}>{i}</a>);
+      }
+    }
+    paginatedLinks.push(<a onClick={() => this.clickPagintation(lastPage+1)}>&raquo;</a>);
+    return paginatedLinks;
+  }
+
   render() {
     return (
       <div className="App">
@@ -53,9 +84,12 @@ class App extends Component {
       <input
         type="text"
         onChange={(e) => this.changetext(e)}/>
-        <Movieresult
-          movieObject={this.state.movieList}
-          searchText={this.state.searchText}></Movieresult>
+      <div className="pagination">
+        {this.renderPagination()}
+      </div>
+      <Movieresult
+        movieObject={this.state.movieList}
+        searchText={this.state.searchText}></Movieresult>
       </div>
     );
   }
